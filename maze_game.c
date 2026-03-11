@@ -102,7 +102,7 @@ int main(void)
     // TODO-4: Define all variables required for game UI elements (sprites, fonts...)
     int score = 0;
 	float gameTime = 0.0f;
-    Font font = GetFontDefault();
+    // Font font = GetFontDefault();
 	// END TODO-4
 
     SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
@@ -119,8 +119,13 @@ int main(void)
         if (currentMode == 0) // Game mode
         {
             // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point
-            Rectangle newPlayer = player;
+            player.x = mazePosition.x + startCell.x * MAZE_SCALE + MAZE_SCALE / 4;
+            player.y = mazePosition.y + startCell.y * MAZE_SCALE + MAZE_SCALE / 4;
+            player.width = MAZE_SCALE / 2;
+            player.height = MAZE_SCALE / 2;
 
+            Rectangle newPlayer = player;
+			gameTime += GetFrameTime(); // Update game time
             // Implement maze 2D player movement logic (cursors || WASD)
             if (IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
             if (IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
@@ -133,9 +138,9 @@ int main(void)
 
             if (cellX >= 0 && cellX < imMaze.width && cellY >= 0 && cellY < imMaze.height)
             {
-                Color* pixels = LoadImageColors(imMaze);
-                if (pixels[cellY * imMaze.width + cellX].r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
-                UnloadImageColors(pixels);
+				Color pixel = GetImageColor(imMaze, cellX, cellY);
+                if (pixel.r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
+                // UnloadImageColors(pixels);
             }
             // Detect if current playerCell == endCell to finish game
 			if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
@@ -183,11 +188,23 @@ int main(void)
 			selectedCell.x = (mouse.x - mazePosition.x) / MAZE_SCALE;
 			selectedCell.y = (mouse.y - mazePosition.y) / MAZE_SCALE;
 
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON)) ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE); // Add wall
-			if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON)) ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK); // Remove wall
+            bool changed = false;
+            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+            {
+                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE); // Add wall
+                changed = true;
+            }
+            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
+            {
+                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK); // Remove wall
+                changed = true;
+            }
 
-            UnloadTexture(texMaze);
-			texMaze = LoadTextureFromImage(imMaze);
+            if (changed)
+            {
+                UnloadTexture(texMaze);
+                texMaze = LoadTextureFromImage(imMaze);
+            }
 			// END TODO-8
             
             // TODO-9: [2p] Collectible map items: player score
@@ -196,7 +213,7 @@ int main(void)
 
             if (IsKeyPressed(KEY_I))
             {
-                for (int i = o; i < MAX_MAZE_ITEMS; i++)
+                for (int i = 0; i < MAX_MAZE_ITEMS; i++)
                 {
                     if (mazeItems[i].x == 0 && mazeItems[i].y == 0) // Find first empty slot
                     {
@@ -240,14 +257,38 @@ int main(void)
                 {
                     for (int x = 0; x < imMaze.width; x++)
                     {
-                        Color pixelColor = GetImageColor(imMaze, x, y);
-                        if (pixelColor.r == 255) // Wall
+                        Vector2 cellPosition = {
+                                mazePosition.x + texBiomes[currentBiome].width / 2 * x,
+                                mazePosition.y + texBiomes[currentBiome].height / 2 * y
+                        };
+
+                        if (ColorIsEqual(GetImageColor(imMaze, x, y), RAYWHITE))
                         {
-                            DrawTexture(texBiomes[currentBiome], mazePosition.x + x * MAZE_SCALE, mazePosition.y + y * MAZE_SCALE, WHITE);
+                            DrawTextureRec(
+                                texBiomes[currentBiome],
+                                (Rectangle) {
+                                texBiomes[currentBiome].width / 2,
+                                    texBiomes[currentBiome].height / 2,
+                                    texBiomes[currentBiome].width / 2,
+                                    texBiomes[currentBiome].height / 2
+                            },
+                                cellPosition,
+                                RAYWHITE
+                            );
                         }
-                        else if (pixelColor.r == 0) // Floor
+                        else if (ColorIsEqual(GetImageColor(imMaze, x, y), BLACK))
                         {
-                            DrawTexture(texBiomes[currentBiome], mazePosition.x + x * MAZE_SCALE, mazePosition.y + y * MAZE_SCALE, WHITE);
+                            DrawTextureRec(
+                                texBiomes[currentBiome],
+                                (Rectangle) {
+                                0,
+                                    0,
+                                    texBiomes[currentBiome].width / 2,
+                                    texBiomes[currentBiome].height / 2
+                            },
+                                cellPosition,
+                                RAYWHITE
+                            );
                         }
                     }
 				}
@@ -255,6 +296,7 @@ int main(void)
                 
                 // TODO-12: Draw player rectangle or sprite at player position
                 DrawRectangleRec(player, BLUE);
+
 				// END TODO-12
                 
                 // TODO-13: Draw maze items 2d (using sprite texture?)
@@ -328,35 +370,65 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
 	Image imMaze = GenImageColor(width, height, BLACK);
     
     // TODO-1: [1p] Implement maze image generation algorithm
-    Color *pixels = LoadImageColors(imMaze);
 
-    for (int y = 0; y < height; y++)
+	Point mazePoints[64] = { 0 };
+    for (int i = 0; i < 64; i++)
     {
-        for (int x = 0; x < width; x++)
-        {
-            if (x % spacingCols == 0 || y % spacingRows == 0)
-            {
-                pixels[y * width + x] = RAYWHITE;
+        mazePoints[i].x = - 1;
+        mazePoints[i].y = - 1;
+	}
 
-                if ((GetRandomValue(0, 100) / 100.0f) < pointChance) pixels[y * width + x] = BLACK;
+    int mazePointCounter = 0;
+
+    for (int y = 0; y < imMaze.height; y++)
+    {
+        for (int x = 0; x < imMaze.width; x++)
+        {
+            if (
+                (x <= (0) || x >= (imMaze.width - 1))
+                || (y <= (0) || y >= (imMaze.height - 1))
+                ) {
+                ImageDrawPixel(&imMaze, x, y, RAYWHITE);
+            }
+            else if ((x % spacingRows == 0) && (y % spacingCols == 0))
+            {
+                if (GetRandomValue(0, 100) < pointChance * 100)
+                {
+                    mazePoints[mazePointCounter] = (Point){ x, y };
+                    mazePointCounter++;
+                }
             }
         }
     }
 
-    for (int x = 0; x < width; x++)
+    Point dirIncrement[4] = {
+        { 0, -1 },
+        { 1, 0 },
+        { 0, 1 },
+        { -1, 0 }
+    };
+
+    int *indices = LoadRandomSequence(mazePointCounter, 0, mazePointCounter - 1);
+
+    for (int i = 0; i < mazePointCounter; i++)
     {
-        pixels[x] = RAYWHITE;
-        pixels[(height - 1) * width + x] = RAYWHITE;
+        int index = indices[i];
+        int direction = GetRandomValue(0, 3); // 0-N, 1-E, 2-S, 3-W
+
+        Point nextPoint = { 0 };
+        nextPoint.x = mazePoints[index].x;
+        nextPoint.y = mazePoints[index].y;
+
+        while (ColorIsEqual(GetImageColor(imMaze, nextPoint.x, nextPoint.y), BLACK))
+        {
+            ImageDrawPixel(&imMaze, nextPoint.x, nextPoint.y, WHITE);
+            nextPoint.x += dirIncrement[direction].x;
+            nextPoint.y += dirIncrement[direction].y;
+        }
     }
 
-    for (int y = 0; y < height; y++)
-    {
-        pixels[y * width] = RAYWHITE;
-        pixels[y * width + width - 1] = RAYWHITE;
-    }
+    UnloadRandomSequence(indices);
 
-    UpdateImageColors(&imMaze, pixels);
-    UnloadImageColors(pixels);
 	// END TODO-1
     return imMaze;
 }
