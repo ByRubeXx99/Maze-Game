@@ -14,11 +14,11 @@
 #include "raylib.h"
 #include <stdlib.h>     // Required for: malloc(), free()
 
-#define MAZE_WIDTH          64
-#define MAZE_HEIGHT         64
-#define MAZE_SCALE          10.0f
+#define MAZE_WIDTH 64
+#define MAZE_HEIGHT 64
+#define MAZE_SCALE 10.0f
 
-#define MAX_MAZE_ITEMS      16
+#define MAX_MAZE_ITEMS 16
 
 // Declare new data type: Point
 typedef struct Point {
@@ -100,7 +100,7 @@ int main(void)
     int currentBiome = 0;
 
     // TODO-4: Define all variables required for game UI elements (sprites, fonts...)
-    int socre = 0;
+    int score = 0;
 	float gameTime = 0.0f;
     Font font = GetFontDefault();
 	// END TODO-4
@@ -122,20 +122,21 @@ int main(void)
             Rectangle newPlayer = player;
 
             // Implement maze 2D player movement logic (cursors || WASD)
-            if (IsKeyDown(KEY_D)) player.x += 8.0f;
-            if (IsKeyDown(KEY_A)) player.x -= 8.0f;
-            if (IsKeyDown(KEY_W)) player.y -= 8.0f;
-            if (IsKeyDown(KEY_S)) player.y += 8.0f;
+            if (IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
+            if (IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
+            if (IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
+            if (IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
 
             // Use imMaze pixel information to check collisions
 			int cellX = (newPlayer.x - mazePosition.x) / MAZE_SCALE;
 			int cellY = (newPlayer.y - mazePosition.y) / MAZE_SCALE;
 
-            Color *pixels = LoadImageColors(imMaze);
-			if (pixels[cellY*imMaze.width + cellX].r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
-
-            UnloadImageColors(pixels);
-
+            if (cellX >= 0 && cellX < imMaze.width && cellY >= 0 && cellY < imMaze.height)
+            {
+                Color* pixels = LoadImageColors(imMaze);
+                if (pixels[cellY * imMaze.width + cellX].r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
+                UnloadImageColors(pixels);
+            }
             // Detect if current playerCell == endCell to finish game
 			if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
 			// END TODO-5
@@ -143,7 +144,12 @@ int main(void)
             // TODO-6: [1p] Camera 2D system following player movement around the map
             // Update Camera2D parameters as required to follow player and zoom control
 			camera2d.target = (Vector2){ player.x, player.y }; // Camera target follows player
-            camera2d.zoom = expf(logf(camera2d.zoom) + ((flaot)GetMouseWheelMove() * 0.1f)); // Camera zoom controls
+            // camera2d.zoom = expf(logf(camera2d.zoom) + ((float)GetMouseWheelMove() * 0.1f)); // Camera zoom controls
+			camera2d.zoom += GetMouseWheelMove() * 0.1f; // Camera zoom controls
+
+            if (camera2d.zoom < 0.2f) camera2d.zoom = 0.2f;
+			if (camera2d.zoom > 3.0f) camera2d.zoom = 3.0f;
+
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
@@ -187,6 +193,21 @@ int main(void)
             // TODO-9: [2p] Collectible map items: player score
             // Using same mechanism than maze editor, implement an items editor, registering
             // points in the map where items should be added for player pickup -> TIP: Use mazeItems[]
+
+            if (IsKeyPressed(KEY_I))
+            {
+                for (int i = o; i < MAX_MAZE_ITEMS; i++)
+                {
+                    if (mazeItems[i].x == 0 && mazeItems[i].y == 0) // Find first empty slot
+                    {
+                        mazeItems[i] = selectedCell; // Place item at selected cell
+						mazeItemPicked[i] = false; // Mark item as not picked
+                        break;
+                    }
+				}
+            }
+
+			// END TODO-9
         }
 
         // TODO-10: [1p] Multiple maze biomes supported
@@ -303,10 +324,11 @@ int main(void)
 // NOTE: Color scheme used: WHITE = Wall, BLACK = Walkable, RED = Item
 static Image GenImageMaze(int width, int height, int spacingRows, int spacingCols, float pointChance)
 {
-    Image imMaze = { 0 };
+    // Image imMaze = { 0 };
+	Image imMaze = GenImageColor(width, height, BLACK);
     
     // TODO-1: [1p] Implement maze image generation algorithm
-    Color* pixels = LoadImageColors(imMaze);
+    Color *pixels = LoadImageColors(imMaze);
 
     for (int y = 0; y < height; y++)
     {
