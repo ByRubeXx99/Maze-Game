@@ -7,12 +7,12 @@
 *   This game has been created using raylib (www.raylib.com)
 *   raylib is licensed under an unmodified zlib/libpng license (View raylib.h for details)
 *
-*   Copyright (c) 2024-2025 Ramon Santamaria (@raysan5)
+*   Copyright (c) 2026 Ramon Santamaria (@raysan5)
 *
 ********************************************************************************************/
 
 #include "raylib.h"
-#include <stdlib.h>     // Required for: malloc(), free()
+#include <stdlib.h>
 
 #define MAZE_WIDTH 64
 #define MAZE_HEIGHT 64
@@ -20,14 +20,12 @@
 
 #define MAX_MAZE_ITEMS 16
 
-// Declare new data type: Point
 typedef struct Point {
     int x;
     int y;
 } Point;
 
-// Generate procedural maze image, using grid-based algorithm
-// NOTE: Functions defined as static are internal to the module
+
 static Image GenImageMaze(int width, int height, int spacingRows, int spacingCols, float pointChance);
 
 //----------------------------------------------------------------------------------
@@ -75,7 +73,7 @@ int main(void)
     Camera2D camera2d = { 0 };
 
     camera2d.target = (Vector2){ player.x, player.y };
-	camera2d.offset = (Vector2){ screenWidth / 2.0f, screenHeight / 2.0f };
+	camera2d.offset = (Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
 	camera2d.rotation = 0.0f;
 	camera2d.zoom = 1.0f;
     // END TODO-2
@@ -118,19 +116,17 @@ int main(void)
 
         if (currentMode == 0) // Game mode
         {
-            // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point
-            player.x = mazePosition.x + startCell.x * MAZE_SCALE + MAZE_SCALE / 4;
-            player.y = mazePosition.y + startCell.y * MAZE_SCALE + MAZE_SCALE / 4;
-            player.width = MAZE_SCALE / 2;
-            player.height = MAZE_SCALE / 2;
+            // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point           
 
             Rectangle newPlayer = player;
 			gameTime += GetFrameTime(); // Update game time
+
             // Implement maze 2D player movement logic (cursors || WASD)
-            if (IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
-            if (IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
-            if (IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
-            if (IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
+
+            if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
+            if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
+            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
+            if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
 
             // Use imMaze pixel information to check collisions
 			int cellX = (newPlayer.x - mazePosition.x) / MAZE_SCALE;
@@ -140,8 +136,8 @@ int main(void)
             {
 				Color pixel = GetImageColor(imMaze, cellX, cellY);
                 if (pixel.r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
-                // UnloadImageColors(pixels);
             }
+
             // Detect if current playerCell == endCell to finish game
 			if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
 			// END TODO-5
@@ -372,6 +368,7 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
     // TODO-1: [1p] Implement maze image generation algorithm
 
 	Point mazePoints[64] = { 0 };
+
     for (int i = 0; i < 64; i++)
     {
         mazePoints[i].x = - 1;
