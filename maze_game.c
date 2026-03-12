@@ -72,10 +72,10 @@ int main(void)
     // TODO-2: [2p] Initialize camera parameters as required
     Camera2D camera2d = { 0 };
 
-    camera2d.target = (Vector2){ player.x, player.y };
+    camera2d.target = (Vector2){ player.x + player.width/2 , player.y + player.height/2 };
 	camera2d.offset = (Vector2){ GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f };
 	camera2d.rotation = 0.0f;
-	camera2d.zoom = 1.0f;
+	camera2d.zoom = 5.0f;
     // END TODO-2
 
     // Mouse selected cell for maze editing
@@ -128,30 +128,31 @@ int main(void)
             if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
             if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
 
-            // Use imMaze pixel information to check collisions
 			int cellX = (newPlayer.x - mazePosition.x) / MAZE_SCALE;
 			int cellY = (newPlayer.y - mazePosition.y) / MAZE_SCALE;
 
             if (cellX >= 0 && cellX < imMaze.width && cellY >= 0 && cellY < imMaze.height)
             {
 				Color pixel = GetImageColor(imMaze, cellX, cellY);
-                if (ColorIsEqual(pixel, BLACK)) player = newPlayer; // Check if the cell is walkable (BLACK)
+
+                if (ColorIsEqual(pixel, BLACK)) player = newPlayer;
+
+                if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
             }
 
-            // Detect if current playerCell == endCell to finish game
-			if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
 			// END TODO-5
            
             // TODO-6: [1p] Camera 2D system following player movement around the map
             // Update Camera2D parameters as required to follow player and zoom control
-			camera2d.target = (Vector2){ player.x, player.y }; // Camera target follows player
+			camera2d.target = (Vector2){ player.x + player.width/2, player.y + player.height/2 }; // Camera target follows player
 			camera2d.zoom += GetMouseWheelMove() * 0.1f; // Camera zoom controls
 
-            if (camera2d.zoom < 0.2f) camera2d.zoom = 0.2f;
+            if (camera2d.zoom < 0.3f) camera2d.zoom = 0.3f;
 			if (camera2d.zoom > 3.0f) camera2d.zoom = 3.0f;
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
+            /*
             for (int i = 0; i < MAX_MAZE_ITEMS; i++)
             {
                 if (!mazeItemPicked[i])
@@ -164,6 +165,17 @@ int main(void)
                         score += 10; // Increase player score
                     }
 				}
+            }
+            */
+            Color pixelR = GetImageColor(imMaze, cellX, cellY);
+            
+            if (ColorIsEqual(pixelR, RED))
+            {
+                score += 10;
+				ImageDrawPixel(&imMaze, cellX, cellY, BLACK); // Remove item from maze
+
+                UnloadTexture(texMaze);
+				texMaze = LoadTextureFromImage(imMaze); // Update texture to reflect item removal
             }
 			// END TODO-7
         }
@@ -184,15 +196,31 @@ int main(void)
 
             bool changed = false;
 
-            if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+            if (selectedCell.x >= 0 && selectedCell.x < imMaze.width && selectedCell.y >= 0 && selectedCell.y < imMaze.height)
             {
-                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE);
-                changed = true;
-            }
-            if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
-            {
-                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK);
-                changed = true;
+                if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON) && !IsKeyDown(KEY_LEFT_CONTROL))
+                {
+                    ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE);
+                    changed = true;
+                }
+
+                if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
+                {
+                    ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK);
+                    changed = true;
+                }
+
+                if (IsMouseButtonDown(MOUSE_MIDDLE_BUTTON))
+                {
+                    ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RED);
+                    changed = true;
+                }
+
+                if (IsKeyDown(KEY_LEFT_CONTROL) && IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
+                {
+                    ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, GREEN);
+                    changed = true;
+                }
             }
 
             if (changed)
@@ -226,11 +254,10 @@ int main(void)
         // Implement changing between the different textures to be used as biomes
         // NOTE: For the 3d model, the current selected texture must be applied to the model material  
 
-        if (IsKeyPressed(KEY_B))
-        {
-            currentBiome++;
-            if (currentBiome > 3) currentBiome = 0;
-		}
+        if (IsKeyPressed(KEY_ONE)) currentBiome = 0;
+        if (IsKeyPressed(KEY_TWO)) currentBiome = 1;
+        if (IsKeyPressed(KEY_THREE)) currentBiome = 2;
+        if (IsKeyPressed(KEY_FOUR)) currentBiome = 3;
 		// END TODO-10
         
         //----------------------------------------------------------------------------------
@@ -292,13 +319,21 @@ int main(void)
 				// END TODO-12
                 
                 // TODO-13: Draw maze items 2d (using sprite texture?)
-                for (int i = 0; i < MAX_MAZE_ITEMS; i++)
+                for (int y = 0; y < imMaze.height; y++)
                 {
-                    if (!mazeItemPicked[i])
+                    for (int x = 0; x < imMaze.width; x++)
                     {
-                        DrawCircle(mazePosition.x + mazeItems[i].x*MAZE_SCALE + MAZE_SCALE/2, mazePosition.y + mazeItems[i].y*MAZE_SCALE + MAZE_SCALE/2, 4, YELLOW);
+                        if (ColorIsEqual(GetImageColor(imMaze, x, y), RED))
+                        {
+                            DrawCircle(
+                                mazePosition.x + x * MAZE_SCALE + MAZE_SCALE / 2,
+                                mazePosition.y + y * MAZE_SCALE + MAZE_SCALE / 2,
+                                4,
+                                YELLOW
+                            );
+                        }
                     }
-				}
+                }
 				// END TODO-13
                 EndMode2D();
 
@@ -325,8 +360,8 @@ int main(void)
                 // TODO-16: Draw editor UI required elements
 				DrawText("EDITOR MODE", 20, 100, 20, RED);
                 DrawText("Left click: wall", 20, 130, 20, BLACK);
-                DrawText("Right click: path", 20, 160, 20, BLACK);
-                DrawText("Press I to place item", 20, 190, 20, BLACK);
+                DrawText("Middle click: item", 20, 160, 20, BLACK);
+                DrawText("CTRL + Right click: end point", 20, 190, 20, BLACK);
 				// END TODO-16
             }
 
