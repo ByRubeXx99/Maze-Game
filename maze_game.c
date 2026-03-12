@@ -135,7 +135,7 @@ int main(void)
             if (cellX >= 0 && cellX < imMaze.width && cellY >= 0 && cellY < imMaze.height)
             {
 				Color pixel = GetImageColor(imMaze, cellX, cellY);
-                if (pixel.r == 0) player = newPlayer; // Check if the cell is walkable (BLACK)
+                if (ColorIsEqual(pixel, BLACK)) player = newPlayer; // Check if the cell is walkable (BLACK)
             }
 
             // Detect if current playerCell == endCell to finish game
@@ -145,12 +145,10 @@ int main(void)
             // TODO-6: [1p] Camera 2D system following player movement around the map
             // Update Camera2D parameters as required to follow player and zoom control
 			camera2d.target = (Vector2){ player.x, player.y }; // Camera target follows player
-            // camera2d.zoom = expf(logf(camera2d.zoom) + ((float)GetMouseWheelMove() * 0.1f)); // Camera zoom controls
 			camera2d.zoom += GetMouseWheelMove() * 0.1f; // Camera zoom controls
 
             if (camera2d.zoom < 0.2f) camera2d.zoom = 0.2f;
 			if (camera2d.zoom > 3.0f) camera2d.zoom = 3.0f;
-
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
@@ -185,14 +183,15 @@ int main(void)
 			selectedCell.y = (mouse.y - mazePosition.y) / MAZE_SCALE;
 
             bool changed = false;
+
             if (IsMouseButtonDown(MOUSE_LEFT_BUTTON))
             {
-                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE); // Add wall
+                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, RAYWHITE);
                 changed = true;
             }
             if (IsMouseButtonDown(MOUSE_RIGHT_BUTTON))
             {
-                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK); // Remove wall
+                ImageDrawPixel(&imMaze, selectedCell.x, selectedCell.y, BLACK);
                 changed = true;
             }
 
@@ -254,37 +253,34 @@ int main(void)
                     for (int x = 0; x < imMaze.width; x++)
                     {
                         Vector2 cellPosition = {
-                                mazePosition.x + texBiomes[currentBiome].width / 2 * x,
-                                mazePosition.y + texBiomes[currentBiome].height / 2 * y
+                                mazePosition.x + MAZE_SCALE * x,
+                                mazePosition.y + MAZE_SCALE * y
                         };
 
                         if (ColorIsEqual(GetImageColor(imMaze, x, y), RAYWHITE))
                         {
-                            DrawTextureRec(
-                                texBiomes[currentBiome],
+                            // PARED
+                            DrawTexturePro(texBiomes[currentBiome],
                                 (Rectangle) {
-                                texBiomes[currentBiome].width / 2,
+                                    texBiomes[currentBiome].width / 2,
                                     texBiomes[currentBiome].height / 2,
                                     texBiomes[currentBiome].width / 2,
                                     texBiomes[currentBiome].height / 2
-                            },
-                                cellPosition,
-                                RAYWHITE
-                            );
+                                },
+                                (Rectangle) { cellPosition.x, cellPosition.y, MAZE_SCALE, MAZE_SCALE },
+                                (Vector2) { 0, 0 }, 0.0f, WHITE );
                         }
-                        else if (ColorIsEqual(GetImageColor(imMaze, x, y), BLACK))
+                        else
                         {
-                            DrawTextureRec(
-                                texBiomes[currentBiome],
-                                (Rectangle) {
-                                0,
-                                    0,
+                            // SUELO
+                            DrawTexturePro( texBiomes[currentBiome],
+                                (Rectangle) { 0, 0,
                                     texBiomes[currentBiome].width / 2,
                                     texBiomes[currentBiome].height / 2
-                            },
-                                cellPosition,
-                                RAYWHITE
-                            );
+                                },
+                                (Rectangle) {
+                                cellPosition.x, cellPosition.y, MAZE_SCALE, MAZE_SCALE },
+                                (Vector2) { 0, 0 }, 0.0f, WHITE );
                         }
                     }
 				}
@@ -346,10 +342,7 @@ int main(void)
     UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
 
     // TODO-17: Unload all loaded resources
-	UnloadTexture(texBiomes[0]);
-	UnloadTexture(texBiomes[1]);
-	UnloadTexture(texBiomes[2]);
-	UnloadTexture(texBiomes[3]);
+    for (int i = 0; i < 4; i++) UnloadTexture(texBiomes[i]);
 	// END TODO-17
 
     CloseWindow();              // Close window and OpenGL context
@@ -381,10 +374,8 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
     {
         for (int x = 0; x < imMaze.width; x++)
         {
-            if (
-                (x <= (0) || x >= (imMaze.width - 1))
-                || (y <= (0) || y >= (imMaze.height - 1))
-                ) {
+            if ((x <= 0 || x >= imMaze.width - 1) || (y <= 0 || y >= imMaze.height - 1))
+            {
                 ImageDrawPixel(&imMaze, x, y, RAYWHITE);
             }
             else if ((x % spacingRows == 0) && (y % spacingCols == 0))
@@ -396,7 +387,7 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
                 }
             }
         }
-    }
+    } 
 
     Point dirIncrement[4] = {
         { 0, -1 },
@@ -418,7 +409,7 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
 
         while (ColorIsEqual(GetImageColor(imMaze, nextPoint.x, nextPoint.y), BLACK))
         {
-            ImageDrawPixel(&imMaze, nextPoint.x, nextPoint.y, WHITE);
+            ImageDrawPixel(&imMaze, nextPoint.x, nextPoint.y, RAYWHITE);
             nextPoint.x += dirIncrement[direction].x;
             nextPoint.y += dirIncrement[direction].y;
         }
