@@ -152,21 +152,8 @@ int main(void)
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
-            /*
-            for (int i = 0; i < MAX_MAZE_ITEMS; i++)
-            {
-                if (!mazeItemPicked[i])
-                {
-                    Rectangle itemRect = { mazePosition.x + mazeItems[i].x * MAZE_SCALE, mazePosition.y + mazeItems[i].y * MAZE_SCALE, MAZE_SCALE, MAZE_SCALE }; // MAZE_SCALE --> 4
 
-                    if (CheckCollisionRecs(player, itemRect))
-                    {
-                        mazeItemPicked[i] = true; // Mark item as picked
-                        score += 10; // Increase player score
-                    }
-				}
-            }
-            */
+
             Color pixelR = GetImageColor(imMaze, cellX, cellY);
             
             if (ColorIsEqual(pixelR, RED))
