@@ -100,6 +100,7 @@ int main(void)
     // TODO-4: Define all variables required for game UI elements (sprites, fonts...)
     int score = 0;
 	float gameTime = 10.0f;
+    bool playerWin = false;
     // Font font = GetFontDefault();
 	// END TODO-4
 
@@ -124,11 +125,13 @@ int main(void)
                 gameTime -= GetFrameTime(); // Update game time
             }
             // Implement maze 2D player movement logic (cursors || WASD)
-
-            if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
-            if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
-            if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
-            if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
+            if (gameTime > 0 && playerWin == false)
+            {
+                if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
+                if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
+                if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
+                if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
+            }
 
 			int cellX = (newPlayer.x - mazePosition.x) / MAZE_SCALE;
 			int cellY = (newPlayer.y - mazePosition.y) / MAZE_SCALE;
@@ -137,9 +140,12 @@ int main(void)
             {
 				Color pixel = GetImageColor(imMaze, cellX, cellY);
 
-                if (ColorIsEqual(pixel, BLACK)) player = newPlayer;
+                if (ColorIsEqual(pixel, BLACK) || ColorIsEqual(pixel, GREEN)) player = newPlayer;
 
-                if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
+                if (ColorIsEqual(pixel, GREEN))
+                {
+                    playerWin = true;
+                }
             }
             
 			// END TODO-5
@@ -298,6 +304,16 @@ int main(void)
                                 cellPosition.x, cellPosition.y, MAZE_SCALE, MAZE_SCALE },
                                 (Vector2) { 0, 0 }, 0.0f, WHITE );
                         }
+                        
+                        if (ColorIsEqual(GetImageColor(imMaze, x, y), GREEN))
+                        {
+                            DrawCircle(
+                                mazePosition.x + x * MAZE_SCALE + MAZE_SCALE/2,
+                                mazePosition.y + y * MAZE_SCALE + MAZE_SCALE/2,
+                                5,
+                                GREEN
+                            );
+                        }
                     }
 				}
 				// END TODO-11
@@ -335,6 +351,10 @@ int main(void)
                 if (gameTime<=0)
                 {
                     DrawText("OUT OF TIME ", 500, 200, 40, RED);
+                }
+                if (playerWin)
+                {
+                    DrawText("YOU WIN!", GetScreenWidth()/2 - 150, 200, 50, GREEN);
                 }
 				// END TODO-14
             }
