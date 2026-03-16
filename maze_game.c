@@ -99,7 +99,7 @@ int main(void)
 
     // TODO-4: Define all variables required for game UI elements (sprites, fonts...)
     int score = 0;
-	float gameTime = 10.0f;
+	float gameTime = 25.0f;
     bool playerWin = false;
     // Font font = GetFontDefault();
 	// END TODO-4
@@ -118,23 +118,21 @@ int main(void)
         if (currentMode == 0) // Game mode
         {
             // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point           
-
+            
             Rectangle newPlayer = player;
-            if (gameTime > 0)
+            if (gameTime > 0 && !playerWin)
             {
                 gameTime -= GetFrameTime(); // Update game time
-            }
-            // Implement maze 2D player movement logic (cursors || WASD)
-            if (gameTime > 0 && playerWin == false)
-            {
+
+                // Implement maze 2D player movement logic (cursors || WASD)
                 if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
                 if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
                 if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
                 if (IsKeyDown(KEY_DOWN) || IsKeyDown(KEY_S)) newPlayer.y += 2.0f;
             }
 
-			int cellX = (newPlayer.x - mazePosition.x) / MAZE_SCALE;
-			int cellY = (newPlayer.y - mazePosition.y) / MAZE_SCALE;
+            int cellX = (newPlayer.x + newPlayer.width / 2 - mazePosition.x) / MAZE_SCALE;
+            int cellY = (newPlayer.y + newPlayer.height / 2 - mazePosition.y) / MAZE_SCALE;
 
             if (cellX >= 0 && cellX < imMaze.width && cellY >= 0 && cellY < imMaze.height)
             {
@@ -142,25 +140,34 @@ int main(void)
 
                 if (ColorIsEqual(pixel, BLACK) || ColorIsEqual(pixel, GREEN)) player = newPlayer;
 
-                if (ColorIsEqual(pixel, GREEN))
-                {
-                    playerWin = true;
-                }
+                if (ColorIsEqual(pixel, GREEN)) playerWin = true;
             }
             
+            if (playerWin || gameTime <= 0)
+            {
+                if (IsKeyPressed(KEY_R))
+                {
+                    score = 0;
+                    gameTime = 25.0f;
+                    playerWin = false;
+
+                    player.x = mazePosition.x + startCell.x * MAZE_SCALE + 2;
+                    player.y = mazePosition.y + startCell.y * MAZE_SCALE + 2;
+                }
+            }
+
 			// END TODO-5
            
             // TODO-6: [1p] Camera 2D system following player movement around the map
             // Update Camera2D parameters as required to follow player and zoom control
 			camera2d.target = (Vector2){ player.x + player.width/2, player.y + player.height/2 }; // Camera target follows player
-			camera2d.zoom += GetMouseWheelMove() * 0.1f; // Camera zoom controls
+			camera2d.zoom += GetMouseWheelMove() * 0.1f;
 
             if (camera2d.zoom < 0.3f) camera2d.zoom = 0.3f;
 			if (camera2d.zoom > 3.0f) camera2d.zoom = 3.0f;
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
-
 
             Color pixelR = GetImageColor(imMaze, cellX, cellY);
             
@@ -350,12 +357,12 @@ int main(void)
 				DrawText(TextFormat("Time: %.2f", gameTime), 20, 70, 20, BLACK);
                 if (gameTime<=0)
                 {
+                    gameTime = 0;
                     DrawText("OUT OF TIME ", 500, 200, 40, RED);
                 }
-                if (playerWin)
-                {
-                    DrawText("YOU WIN!", GetScreenWidth()/2 - 150, 200, 50, GREEN);
-                }
+                if (playerWin) DrawText("YOU WIN!", GetScreenWidth() / 2 - 150, 200, 50, GREEN);
+
+				if (playerWin || gameTime <= 0) DrawText("Press R to Restart", GetScreenWidth() / 2 - 150, 300, 20, BLACK);
 				// END TODO-14
             }
             else if (currentMode == 1) // Editor mode
