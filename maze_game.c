@@ -99,7 +99,7 @@ int main(void)
 
     // TODO-4: Define all variables required for game UI elements (sprites, fonts...)
     int score = 0;
-	float gameTime = 0.0f;
+	float gameTime = 10.0f;
     // Font font = GetFontDefault();
 	// END TODO-4
 
@@ -119,8 +119,10 @@ int main(void)
             // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point           
 
             Rectangle newPlayer = player;
-			gameTime += GetFrameTime(); // Update game time
-
+            if (gameTime > 0)
+            {
+                gameTime -= GetFrameTime(); // Update game time
+            }
             // Implement maze 2D player movement logic (cursors || WASD)
 
             if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
@@ -139,7 +141,7 @@ int main(void)
 
                 if (cellX == endCell.x && cellY == endCell.y) DrawText("YOU WIN!", 500, 200, 40, GREEN);
             }
-
+            
 			// END TODO-5
            
             // TODO-6: [1p] Camera 2D system following player movement around the map
@@ -330,6 +332,10 @@ int main(void)
 
 				DrawText(TextFormat("Score: %i", score), 20, 40, 20, BLACK);
 				DrawText(TextFormat("Time: %.2f", gameTime), 20, 70, 20, BLACK);
+                if (gameTime<=0)
+                {
+                    DrawText("OUT OF TIME ", 500, 200, 40, RED);
+                }
 				// END TODO-14
             }
             else if (currentMode == 1) // Editor mode
