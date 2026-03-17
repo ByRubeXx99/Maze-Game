@@ -33,42 +33,30 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
 //----------------------------------------------------------------------------------
 int main(void)
 {
-    // Initialization
-    //---------------------------------------------------------
     const int screenWidth = 1280;
     const int screenHeight = 720;
 
     InitWindow(screenWidth, screenHeight, "Delivery04 - maze game");
 
-    // Current application mode
-    int currentMode = 1;    // 0-Game, 1-Editor
+    int currentMode = 1;
 
-    // Random seed defines the random numbers generation,
-    // always the same if using the same seed
     SetRandomSeed(67218);
 
-    // Generate maze image using the grid-based generator
     // TODO-1: [1p] Implement GenImageMaze() function with required parameters
     Image imMaze = GenImageMaze(MAZE_WIDTH, MAZE_HEIGHT, 4, 4, 0.75f);
 
-    // Load a texture to be drawn on screen from our image data
-    // WARNING: If imMaze pixel data is modified, texMaze needs to be re-loaded
     Texture texMaze = LoadTextureFromImage(imMaze);
 
-    // Player start-position and end-position initialization
     Point startCell = { 1, 1 };
     Point endCell = { imMaze.width - 2, imMaze.height - 2 };
 
-    // Maze drawing position (editor mode)
     Vector2 mazePosition = {
         GetScreenWidth()/2 - texMaze.width*MAZE_SCALE/2,
         GetScreenHeight()/2 - texMaze.height*MAZE_SCALE/2
     };
 
-    // Define player position and size
     Rectangle player = { mazePosition.x + 1*MAZE_SCALE + 2, mazePosition.y + 1*MAZE_SCALE + 2, 4, 4 };
 
-    // Camera 2D for 2d gameplay mode
     // TODO-2: [2p] Initialize camera parameters as required
     Camera2D camera2d = { 0 };
 
@@ -78,14 +66,11 @@ int main(void)
 	camera2d.zoom = 5.0f;
     // END TODO-2
 
-    // Mouse selected cell for maze editing
     Point selectedCell = { 0 };
 
-    // Maze items position and state
     Point mazeItems[MAX_MAZE_ITEMS] = { 0 };
     bool mazeItemPicked[MAX_MAZE_ITEMS] = { 0 };
     
-    // Define textures to be used as our "biomes"
     Texture texBiomes[4] = { 0 };
     texBiomes[0] = LoadTexture("resources/maze_atlas01.png");
 
@@ -107,17 +92,16 @@ int main(void)
     //--------------------------------------------------------------------------------------
 
     // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
+    while (!WindowShouldClose())
     {
         // Update
         //----------------------------------------------------------------------------------
         // Select current mode as desired
-        if (IsKeyPressed(KEY_SPACE)) currentMode = !currentMode; // Toggle mode: 0-Game, 1-Editor
+        if (IsKeyPressed(KEY_SPACE)) currentMode = !currentMode;
 
-        if (currentMode == 0) // Game mode
+        if (currentMode == 0)
         {
-            // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point           
-            
+            // TODO-5: [2p] Player 2D movement from predefined Start-point to End-point                       
             Rectangle newPlayer = player;
             if (gameTime > 0 && !playerWin)
             {
@@ -153,7 +137,6 @@ int main(void)
                     player.y = mazePosition.y + startCell.y * MAZE_SCALE + 2;
                 }
             }
-
 			// END TODO-5
            
             // TODO-6: [1p] Camera 2D system following player movement around the map
@@ -166,7 +149,6 @@ int main(void)
 			// END TODO-6
             
             // TODO-7: [2p] Maze items pickup logic
-
             Color pixelR = GetImageColor(imMaze, cellX, cellY);
             
             if (ColorIsEqual(pixelR, RED))
@@ -233,7 +215,6 @@ int main(void)
             // TODO-9: [2p] Collectible map items: player score
             // Using same mechanism than maze editor, implement an items editor, registering
             // points in the map where items should be added for player pickup -> TIP: Use mazeItems[]
-
             if (IsKeyPressed(KEY_I))
             {
                 for (int i = 0; i < MAX_MAZE_ITEMS; i++)
@@ -246,7 +227,6 @@ int main(void)
                     }
 				}
             }
-
 			// END TODO-9
         }
 
@@ -268,13 +248,11 @@ int main(void)
 
             ClearBackground(RAYWHITE);
 
-            if (currentMode == 0) // Game mode
+            if (currentMode == 0)
             {
-                // Draw maze using camera2d (for automatic positioning and scale)
                 BeginMode2D(camera2d);
 
                 // TODO-11: Draw maze walls and floor using current texture biome
-
                 for (int y = 0; y < imMaze.height; y++)
                 {
                     for (int x = 0; x < imMaze.width; x++)
@@ -322,8 +300,7 @@ int main(void)
 				// END TODO-11
                 
                 // TODO-12: Draw player rectangle or sprite at player position
-                DrawRectangleRec(player, BLUE);
-
+                DrawRectangleRec(player, RED);
 				// END TODO-12
                 
                 // TODO-13: Draw maze items 2d (using sprite texture?)
@@ -361,12 +338,10 @@ int main(void)
 				if (playerWin || gameTime <= 0) DrawText("Press R to Restart", GetScreenWidth() / 2 - 150, 300, 20, BLACK);
 				// END TODO-14
             }
-            else if (currentMode == 1) // Editor mode
+            else if (currentMode == 1)
             {
-                // Draw generated maze texture, scaled and centered on screen 
                 DrawTextureEx(texMaze, mazePosition, 0.0f, MAZE_SCALE, WHITE);
 
-                // Draw lines rectangle over texture, scaled and centered on screen 
                 DrawRectangleLines(mazePosition.x, mazePosition.y, MAZE_WIDTH*MAZE_SCALE, MAZE_HEIGHT*MAZE_SCALE, RED);
 
                 // TODO-15: Draw player using a rectangle, consider maze screen coordinates!
@@ -389,8 +364,8 @@ int main(void)
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
-    UnloadTexture(texMaze);     // Unload maze texture from VRAM (GPU)
-    UnloadImage(imMaze);        // Unload maze image from RAM (CPU)
+    UnloadTexture(texMaze);
+    UnloadImage(imMaze);
 
     // TODO-17: Unload all loaded resources
     for (int i = 0; i < 4; i++) UnloadTexture(texBiomes[i]);
@@ -406,7 +381,6 @@ int main(void)
 // NOTE: Color scheme used: WHITE = Wall, BLACK = Walkable, RED = Item
 static Image GenImageMaze(int width, int height, int spacingRows, int spacingCols, float pointChance)
 {
-    // Image imMaze = { 0 };
 	Image imMaze = GenImageColor(width, height, BLACK);
     
     // TODO-1: [1p] Implement maze image generation algorithm
