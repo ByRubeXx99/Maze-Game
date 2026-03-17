@@ -101,7 +101,6 @@ int main(void)
     int score = 0;
 	float gameTime = 25.0f;
     bool playerWin = false;
-    // Font font = GetFontDefault();
 	// END TODO-4
 
     SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
@@ -122,9 +121,8 @@ int main(void)
             Rectangle newPlayer = player;
             if (gameTime > 0 && !playerWin)
             {
-                gameTime -= GetFrameTime(); // Update game time
+                gameTime -= GetFrameTime();
 
-                // Implement maze 2D player movement logic (cursors || WASD)
                 if (IsKeyDown(KEY_RIGHT) || IsKeyDown(KEY_D)) newPlayer.x += 2.0f;
                 if (IsKeyDown(KEY_LEFT) || IsKeyDown(KEY_A)) newPlayer.x -= 2.0f;
                 if (IsKeyDown(KEY_UP) || IsKeyDown(KEY_W)) newPlayer.y -= 2.0f;
@@ -160,7 +158,7 @@ int main(void)
            
             // TODO-6: [1p] Camera 2D system following player movement around the map
             // Update Camera2D parameters as required to follow player and zoom control
-			camera2d.target = (Vector2){ player.x + player.width/2, player.y + player.height/2 }; // Camera target follows player
+			camera2d.target = (Vector2){ player.x + player.width/2, player.y + player.height/2 };
 			camera2d.zoom += GetMouseWheelMove() * 0.1f;
 
             if (camera2d.zoom < 0.3f) camera2d.zoom = 0.3f;
@@ -174,10 +172,10 @@ int main(void)
             if (ColorIsEqual(pixelR, RED))
             {
                 score += 10;
-				ImageDrawPixel(&imMaze, cellX, cellY, BLACK); // Remove item from maze
+				ImageDrawPixel(&imMaze, cellX, cellY, BLACK);
 
                 UnloadTexture(texMaze);
-				texMaze = LoadTextureFromImage(imMaze); // Update texture to reflect item removal
+				texMaze = LoadTextureFromImage(imMaze);
             }
 			// END TODO-7
         }
@@ -240,10 +238,10 @@ int main(void)
             {
                 for (int i = 0; i < MAX_MAZE_ITEMS; i++)
                 {
-                    if (mazeItems[i].x == 0 && mazeItems[i].y == 0) // Find first empty slot
+                    if (mazeItems[i].x == 0 && mazeItems[i].y == 0)
                     {
-                        mazeItems[i] = selectedCell; // Place item at selected cell
-						mazeItemPicked[i] = false; // Mark item as not picked
+                        mazeItems[i] = selectedCell;
+						mazeItemPicked[i] = false;
                         break;
                     }
 				}
@@ -288,7 +286,6 @@ int main(void)
 
                         if (ColorIsEqual(GetImageColor(imMaze, x, y), RAYWHITE))
                         {
-                            // PARED
                             DrawTexturePro(texBiomes[currentBiome],
                                 (Rectangle) {
                                     texBiomes[currentBiome].width / 2,
@@ -301,7 +298,6 @@ int main(void)
                         }
                         else
                         {
-                            // SUELO
                             DrawTexturePro( texBiomes[currentBiome],
                                 (Rectangle) { 0, 0,
                                     texBiomes[currentBiome].width / 2,
@@ -456,7 +452,7 @@ static Image GenImageMaze(int width, int height, int spacingRows, int spacingCol
     for (int i = 0; i < mazePointCounter; i++)
     {
         int index = indices[i];
-        int direction = GetRandomValue(0, 3); // 0-N, 1-E, 2-S, 3-W
+        int direction = GetRandomValue(0, 3);
 
         Point nextPoint = { 0 };
         nextPoint.x = mazePoints[index].x;
